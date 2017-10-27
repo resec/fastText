@@ -35,7 +35,7 @@ struct entry {
 
 class Dictionary {
   private:
-    static const int32_t MAX_VOCAB_SIZE = 30000000;
+    static const int32_t MAX_VOCAB_SIZE = 8192;
     static const int32_t MAX_LINE_SIZE = 1024;
 
     int32_t find(const std::string&) const;
@@ -104,7 +104,6 @@ class Dictionary {
                     std::minstd_rand&) const;
     void threshold(int64_t, int64_t);
     void prune(std::vector<int32_t>&);
-    bool isPruned() { return pruneidx_size_ >= 0; }
 };
 
 }

@@ -5,3 +5,5 @@
 data
 fasttext
 result
+gen
+.vscode
