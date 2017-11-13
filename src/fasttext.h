@@ -13,6 +13,8 @@
 #define FASTTEXT_VERSION 12 /* Version 1b */
 #define FASTTEXT_FILEFORMAT_MAGIC_INT32 793712314
 
+#include <atomic>
+
 #include "args.h"
 #include "dictionary.h"
 #include "matrix.h"
@@ -39,7 +41,6 @@ class FastText {
 
     std::atomic<int64_t> tokenCount;
     clock_t start;
-    bool checkModel(std::istream&);
 
     bool quant_;
     int32_t version;
@@ -47,6 +48,7 @@ class FastText {
   public:
     FastText();
 
+    bool checkModel(std::istream&);
     bool loadModel(std::istream&);
     bool loadModel(const std::string&);
     std::string detect(const std::string& text) const;

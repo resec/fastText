@@ -25,7 +25,7 @@ endif
 HOST_ARCH := $(shell if [[ $(shell uname -m) =~ i[345678]86 ]]; then echo x86_32; else echo $(shell uname -m); fi)
 
 CXX = c++
-CXXFLAGS = -pthread -std=c++11
+CXXFLAGS = -std=c++11
 AR = ar
 ARFLAGS = -r
 OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
@@ -115,7 +115,8 @@ $(MARCH_OPTION) \
 -fPIC
 	INCLUDES += \
 -I$(NDK_ROOT)/sources/android/support/include \
--I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include
+-I$(NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/include \
+-I$(NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/$(ANDROID_ARCH)/include \
 
 	AR := $(NDK_ROOT)/toolchains/$(TOOLCHAIN)/prebuilt/$(ANDROID_OS_ARCH)/bin/$(BIN_PREFIX)-ar
 
@@ -171,10 +172,10 @@ endif  # ios
 LIB_NAME := libfasttext.a
 LIB_PATH := $(LIBDIR)$(LIB_NAME)
 
-lib: CXXFLAGS += -Os -funroll-loops
+lib: CXXFLAGS += -O3 -funroll-loops
 lib: $(LIB_PATH)
 
-all: CXXFLAGS += -Os -funroll-loops
+all: CXXFLAGS += -O3 -funroll-loops
 all: $(BINDIR)fasttext
 
 debug: CXXFLAGS += -g -O0 -fno-inline
