@@ -131,7 +131,7 @@ ifeq ($(TARGET),ios)
 	IPHONEOS_SYSROOT := $(shell xcrun --sdk iphoneos --show-sdk-path)
 	IPHONESIMULATOR_PLATFORM := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
 	IPHONESIMULATOR_SYSROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-path)
-	MIN_SDK_VERSION := 8.0
+	MIN_SDK_VERSION := 9.0
 	ifndef IOS_ARCH
     	$(error "IOS_ARCH is not defined.")
 	endif
@@ -139,17 +139,20 @@ ifeq ($(TARGET),ios)
 		CXXFLAGS += -miphoneos-version-min=$(MIN_SDK_VERSION) \
 		-arch armv7 \
 		-mno-thumb \
+		-fembed-bitcode \
 		-isysroot ${IPHONEOS_SYSROOT}
 	endif
 	ifeq ($(IOS_ARCH),armv7s)
 		CXXFLAGS += -miphoneos-version-min=$(MIN_SDK_VERSION) \
 		-arch armv7s \
 		-mno-thumb \
+		-fembed-bitcode \
 		-isysroot ${IPHONEOS_SYSROOT}
 	endif
 	ifeq ($(IOS_ARCH),arm64)
 		CXXFLAGS += -miphoneos-version-min=$(MIN_SDK_VERSION) \
 		-arch arm64 \
+		-fembed-bitcode \
 		-isysroot ${IPHONEOS_SYSROOT}
 	endif
 	ifeq ($(IOS_ARCH),i386)
@@ -161,6 +164,7 @@ ifeq ($(TARGET),ios)
 	ifeq ($(IOS_ARCH),x86_64)
 		CXXFLAGS += -mios-simulator-version-min=$(MIN_SDK_VERSION) \
 		-arch x86_64 \
+		-fembed-bitcode \
 		-isysroot ${IPHONESIMULATOR_SYSROOT}
 	endif
 	
@@ -172,7 +176,7 @@ endif  # ios
 LIB_NAME := libfasttext.a
 LIB_PATH := $(LIBDIR)$(LIB_NAME)
 
-lib: CXXFLAGS += -O3 -funroll-loops
+lib: CXXFLAGS += -Os -funroll-loops
 lib: $(LIB_PATH)
 
 all: CXXFLAGS += -O3 -funroll-loops
