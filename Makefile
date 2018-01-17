@@ -28,8 +28,6 @@ CXX = c++
 CXXFLAGS = -std=c++11
 AR = ar
 ARFLAGS = -r
-OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
-OBJDIR_OBJS = $(addprefix $(OBJDIR), $(OBJS))
 INCLUDES = -I.
 
 MAKEFILE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -66,7 +64,7 @@ ifeq ($(TARGET),android)
         TOOLCHAIN := aarch64-linux-android-4.9
         SYSROOT_ARCH := arm64
         BIN_PREFIX := aarch64-linux-android
-        MARCH_OPTION :=
+        MARCH_OPTION := 
     endif
     ifeq ($(ANDROID_ARCH),armeabi)
         TOOLCHAIN := arm-linux-androideabi-4.9
@@ -173,10 +171,13 @@ ifeq ($(TARGET),ios)
 	BINDIR := $(GENDIR)/ios/bin/$(IOS_ARCH)/
 endif  # ios
 
+OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
+OBJDIR_OBJS = $(addprefix $(OBJDIR), $(OBJS))
+
 LIB_NAME := libfasttext.a
 LIB_PATH := $(LIBDIR)$(LIB_NAME)
 
-lib: CXXFLAGS += -Os -funroll-loops
+lib: CXXFLAGS += -O3 -funroll-loops
 lib: $(LIB_PATH)
 
 all: CXXFLAGS += -O3 -funroll-loops
