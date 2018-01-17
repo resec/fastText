@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <stdexcept>
 
 namespace fasttext {
 
@@ -27,14 +28,20 @@ Dictionary::Dictionary(std::shared_ptr<Args> args) : args_(args),
   word2int_(MAX_VOCAB_SIZE, -1), size_(0), nwords_(0), nlabels_(0),
   ntokens_(0), pruneidx_size_(-1) {}
 
+Dictionary::Dictionary(std::shared_ptr<Args> args, std::istream& in) : args_(args),
+  size_(0), nwords_(0), nlabels_(0), ntokens_(0), pruneidx_size_(-1) {
+  load(in);
+}
+
 int32_t Dictionary::find(const std::string& w) const {
   return find(w, hash(w));
 }
 
 int32_t Dictionary::find(const std::string& w, uint32_t h) const {
-  int32_t id = h % MAX_VOCAB_SIZE;
+  int32_t word2intsize = word2int_.size();
+  int32_t id = h % word2intsize;
   while (word2int_[id] != -1 && words_[word2int_[id]].word != w) {
-    id = (id + 1) % MAX_VOCAB_SIZE;
+    id = (id + 1) % word2intsize;
   }
   return id;
 }
@@ -79,7 +86,9 @@ const std::vector<int32_t> Dictionary::getSubwords(
     return getSubwords(i);
   }
   std::vector<int32_t> ngrams;
-  computeSubwords(BOW + word + EOW, ngrams);
+  if (word != EOS) {
+    computeSubwords(BOW + word + EOW, ngrams);
+  }
   return ngrams;
 }
 
@@ -92,11 +101,10 @@ void Dictionary::getSubwords(const std::string& word,
   if (i >= 0) {
     ngrams.push_back(i);
     substrings.push_back(words_[i].word);
-  } else {
-    ngrams.push_back(-1);
-    substrings.push_back(word);
   }
-  computeSubwords(BOW + word + EOW, ngrams, substrings);
+  if (word != EOS) {
+    computeSubwords(BOW + word + EOW, ngrams, substrings);
+  }
 }
 
 bool Dictionary::discard(int32_t id, real rand) const {
@@ -239,9 +247,8 @@ void Dictionary::readFromFile(std::istream& in) {
     std::cerr << "Number of labels: " << nlabels_ << std::endl;
   }
   if (size_ == 0) {
-    std::cerr << "Empty vocabulary. Try a smaller -minCount value."
-              << std::endl;
-    exit(EXIT_FAILURE);
+    throw std::invalid_argument(
+        "Empty vocabulary. Try a smaller -minCount value.");
   }
 }
 
@@ -299,7 +306,9 @@ void Dictionary::addSubwords(std::vector<int32_t>& line,
                              const std::string& token,
                              int32_t wid) const {
   if (wid < 0) { // out of vocab
-    computeSubwords(BOW + token + EOW, line);
+    if (token != EOS) {
+      computeSubwords(BOW + token + EOW, line);
+    }
   } else {
     if (args_->maxn <= 0) { // in vocab w/o subwords
       line.push_back(wid);
@@ -342,8 +351,7 @@ int32_t Dictionary::getLine(std::istream& in,
 
 int32_t Dictionary::getLine(std::istream& in,
                             std::vector<int32_t>& words,
-                            std::vector<int32_t>& labels,
-                            std::minstd_rand& rng) const {
+                            std::vector<int32_t>& labels) const {
   std::vector<int32_t> word_hashes;
   std::string token;
   int32_t ntokens = 0;
@@ -382,8 +390,10 @@ void Dictionary::pushHash(std::vector<int32_t>& hashes, int32_t id) const {
 }
 
 std::string Dictionary::getLabel(int32_t lid) const {
-  assert(lid >= 0);
-  assert(lid < nlabels_);
+  if (lid < 0 || lid >= nlabels_) {
+    throw std::invalid_argument(
+        "Label id is out of range.");
+  }
   return words_[lid + nwords_].word;
 }
 
@@ -408,7 +418,6 @@ void Dictionary::save(std::ostream& out) const {
 
 void Dictionary::load(std::istream& in) {
   words_.clear();
-  std::fill(word2int_.begin(), word2int_.end(), -1);
   in.read((char*) &size_, sizeof(int32_t));
   in.read((char*) &nwords_, sizeof(int32_t));
   in.read((char*) &nlabels_, sizeof(int32_t));
@@ -423,7 +432,6 @@ void Dictionary::load(std::istream& in) {
     in.read((char*) &e.count, sizeof(int64_t));
     in.read((char*) &e.type, sizeof(entry_type));
     words_.push_back(e);
-    word2int_[find(e.word)] = i;
   }
   pruneidx_.clear();
   for (int32_t i = 0; i < pruneidx_size_; i++) {
@@ -435,6 +443,12 @@ void Dictionary::load(std::istream& in) {
   }
   initTableDiscard();
   initNgrams();
+
+  int32_t word2intsize = std::ceil(size_ / 0.7);
+  word2int_.assign(word2intsize, -1);
+  for (int32_t i = 0; i < size_; i++) {
+    word2int_[find(words_[i].word)] = i;
+  }
 }
 
 void Dictionary::prune(std::vector<int32_t>& idx) {
